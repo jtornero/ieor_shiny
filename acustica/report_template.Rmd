@@ -1,0 +1,43 @@
+---
+title: "Reparto de porcentajes de captura en número"
+output: pdf_document
+params:
+  lance: NA
+  sumario: NA
+  todas: NA
+  seleccionadas: NA
+---
+
+
+
+\begin{center}
+\Large{Resumen del lance `r params$lance`}\\*
+\normalsize
+\end{center}
+```{r echo=FALSE}
+
+sumario<-params$sumario
+knitr::kable(sumario,format='pandoc',row.names=FALSE,longtable=TRUE)
+```
+\begin{center}
+\textbf{Todas las especies}
+\end{center}
+
+```{r results='asis', echo=FALSE}
+
+todas<-params$todas
+
+knitr::kable(todas,format='markdown',align='c',col.names=c("Lance",'Sireno', 'FAO',	'Especie','Peso Kg.','Número','%','Eval.'),row.names=FALSE,longtable=TRUE,padding=0)
+```
+
+\begin{center}
+\textbf{Sólo especies objeto de evaluación}\\
+\end{center}
+
+```{r  results='asis', echo=FALSE}
+
+seleccionadas<-params$seleccionadas
+knitr::kable(seleccionadas,format='markdown',col.names=c('Lance','Sireno', 'FAO','Especie','Peso Kg.','Número','%'),row.names=FALSE,align='c',longtable=TRUE,padding=0)
+```
+
+

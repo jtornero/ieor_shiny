@@ -1,0 +1,146 @@
+library(shiny)
+library(DBI)
+library(RPostgreSQL)
+
+shinyServer(function(input, output,session) {
+  
+  output$spss<-renderUI({
+    drv<-dbDriver("PostgreSQL")
+    con<-dbConnect(drv,dbname="vbhwjxcm",host="hard-plum.db.elephantsql.com",user="vbhwjxcm",
+                   password="dNwTMDBQGUqF5lBbV7pxWccvLKrL7Z64")
+    especies<-fetch(dbSendQuery(con,"select distinct ncien from especies where
+                            espcod in (select espcod
+                            from biologicos
+                            where camp='IEOR2016') order by ncien"),-1)
+    especies
+    dbDisconnect(con)
+    selectInput("especie","Especie:", choices=especies)
+  })
+  
+  datos<-reactive({
+    drv<-dbDriver("PostgreSQL")
+    con<-dbConnect(drv,dbname="vbhwjxcm",host="hard-plum.db.elephantsql.com",user="vbhwjxcm",
+                   password="dNwTMDBQGUqF5lBbV7pxWccvLKrL7Z64")
+    
+    lfd.query<-paste("select lance,numero,talla,peso from biologicos,especies 
+                      where camp='IEOR2016' and
+                      biologicos.espcod=especies.espcod
+                      and ncien='",input$especie,"'",sep='')
+    
+    dat<-dbFetch(dbSendQuery(con,lfd.query),-1)
+    dbDisconnect(con)
+    if (length(dat)>0){
+      lwr<-lm(log(dat$peso)~log(dat$talla/10))
+      list(dat=dat,lwr=lwr)
+    }else{
+      list(dat=NA,lwr=NA)}
+    
+  
+    })
+  
+  output$distPlot <- renderPlot({
+    
+    lfd<-datos()
+    if (!is.na(lfd$lwr)){
+    
+    lfd.data<-lfd$dat
+    lfd.lwr<-lfd$lwr
+    
+    lwr.cooks<-cooks.distance(lfd.lwr)
+    outliers.candidates<-order(lwr.cooks,decreasing=TRUE)[1:5]
+    outliers<-lfd.data[outliers.candidates,]
+    
+    
+    
+    plot(lfd.data$talla,lfd.data$peso,xlab='TL, mm',ylab='Peso, g')
+    
+    text(outliers$talla,outliers$peso,
+          labels=paste("P",outliers$lance,"-",outliers$numero),
+          col='red', cex=0.7,pos=3)
+    }
+    })
+
+  output$lmPlot <- renderPlot({
+    
+    lfd<-datos()
+    lfd.lwr<-lfd$lwr
+    if (!is.na(lfd.lwr)){
+    plot(lfd.lwr)
+      }
+    
+  })
+  
+  output$tablilla<-renderTable({
+    lfd<-datos()
+    print(summary(lfd))
+    if (!is.na(lfd$lwr)){
+    lfd.dat<-lfd$dat
+    lfd.lwr<-lfd$lwr
+    
+    lwr.cooks<-cooks.distance(lfd.lwr)
+    colnames(lfd.dat)<-c('PESCA','NUMERO','TALLA','PESO')
+    lfd.dat["Cooks"]<-lwr.cooks
+    outliers.candidates<-order(lwr.cooks,decreasing=TRUE)[1:5]
+    outliers<-lfd.dat[outliers.candidates,]
+  
+    outliers
+    }
+  
+  
+  })
+  
+  output$summary<-renderText({ 
+      
+      lfd<-datos()
+      if (!is.na(lfd$lwr)){
+        lfd.data<-lfd$data
+        lfd.lwr<-lfd$lwr
+      R2<-summary(lfd.lwr)["r.squared"]
+      samples<-nrow(lfd.data)
+      rango<-range(lfd.data$talla)
+      
+      sprintf("<b>RESUMEN DE LA RELACION TALLA-PESO:</b><br>
+  Número muestras: %i<br>
+  Rango tallas: %i - %i mm<br>
+<b>PARÁMETROS DE LA REGRESIÓN</b><br>
+  A=%f
+  B=%f
+  R^2=%f<br><br>",
+              samples,
+              rango[1],
+              rango[2],
+              round(exp(lwr$coefficients[1]),5),
+              round(lwr$coefficients[2],5),R2)
+      }
+      })
+  
+  output$report <- downloadHandler(
+    # For PDF output, change this to "report.pdf"
+    filename = "report.pdf",
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions to the current working dir (which
+      # can happen when deployed).
+      tempReport <- file.path(tempdir(), "report_template.Rmd")
+      file.copy("report_template.Rmd", tempReport, overwrite = TRUE)
+      
+      data<-datos()
+      
+      if(!is.na(data$lwr)){
+      
+      # Set up parameters to pass to Rmd document
+      params <- list(data=data$dat,lwr=data$lwr, especie=input$especie)
+      
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+      }
+      }
+  )
+  
+})
+

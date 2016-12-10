@@ -1,0 +1,61 @@
+---
+title: "Informe de lance de pesca"
+output: pdf_document
+params:
+  datos: NA
+  lance: NA
+
+---
+
+
+
+\begin{center}
+\Large{Lance `r params$lance`}\\*
+\normalsize
+\end{center}
+```{r results='asis',echo=FALSE}
+
+datos<-params$datos
+knitr::kable(datos[1:6],format='markdown',row.names=FALSE,longtable=TRUE,padding=0,align='c')
+```
+
+\begin{center}
+\textbf{Firmes}\\
+\end{center}
+
+```{r results='asis',echo=FALSE}
+
+datos<-params$datos
+knitr::kable(datos[7:10],format='markdown',row.names=FALSE,longtable=TRUE,padding=0,align='c')
+```
+
+\begin{center}
+\textbf{Virada}\\
+\end{center}
+
+```{r results='asis', echo=FALSE}
+
+datos<-params$datos
+knitr::kable(datos[11:14],format='markdown',row.names=FALSE,longtable=TRUE,padding=0,align='c')
+```
+
+\begin{center}
+\textbf{Mapa}\\
+\end{center}
+
+```{r echo=FALSE,fig.align="center"}
+datos<-params$datos
+long=(datos[8]+datos[12])/2.0
+lat=(datos[7]+datos[11])/2.0
+map(database="world",regions=c("Spain","Portugal","Morocco"),
+ylim=c(35.5,37.5),xlim=c(-9,-5),col=gray(0.9), fill=TRUE)
+map.axes() 
+points(long, lat, pch="*",cex=3,col="red")
+abline(v=seq(-5,-9,-1),col=gray(0.5),lty=2)
+abline(h=seq(35,38,1),col=gray(0.5),lty=2)
+```
+
+
+
+
+

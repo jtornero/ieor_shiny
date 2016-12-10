@@ -1,0 +1,112 @@
+library(shiny)
+library(DBI)
+library(RPostgreSQL)
+
+
+shinyServer(function(input, output,session) {
+  
+  output$spps<-renderUI({
+  drv<-dbDriver("PostgreSQL")
+  con<-dbConnect(drv,dbname="vbhwjxcm",host="hard-plum.db.elephantsql.com",user="vbhwjxcm",
+                 password="dNwTMDBQGUqF5lBbV7pxWccvLKrL7Z64")
+  especies<-fetch(dbSendQuery(con,"select distinct ncien from especies where
+                            espcod in (select espcod
+                            from biologicos
+                            where camp='IEOR2016')
+                            order by ncien"),-1)
+  dbDisconnect(con)
+
+  selectInput("especie","Especie:", choices=especies)
+  })
+  
+  
+  datos<-reactive({
+    drv<-dbDriver("PostgreSQL")
+    con<-dbConnect(drv,dbname="vbhwjxcm",host="hard-plum.db.elephantsql.com",user="vbhwjxcm",
+                   password="dNwTMDBQGUqF5lBbV7pxWccvLKrL7Z64")
+    lfd.query<-paste("with datos as(select
+                     clase_talla(talla,'m') as ctalla,
+                     count(*) as muestreados,
+                     sum(case when otolito=True then 1 else 0 end) as otolitos
+                     from
+                     biologicos,especies
+                     where
+                     biologicos.espcod=especies.espcod
+                     and ncien='",input$especie,                     
+                     "' and camp='IEOR2016'
+                     group by 1)
+                     select 
+                     ctalla,
+                     muestreados,
+                     otolitos,
+                     case when ",input$numotol,"-otolitos>0 then ",input$numotol,"-otolitos else 0 end as pendientes
+                     from datos
+                     order by 1",sep='')
+    
+    dat<-dbFetch(dbSendQuery(con,lfd.query),-1)
+    dbDisconnect(con)
+    dat})
+  
+  
+  
+  
+  
+  
+  output$tablilla<-renderTable({ 
+    
+    otolith.data<-datos()
+    
+    if (input$pendientes==TRUE){
+      otolith.data<-otolith.data[otolith.data$pendiente>0,]}
+    
+    colnames(otolith.data)<-c('Clase\nTalla','Muestreados','Otolitos','Pendientes')
+    otolith.data$Muestreados<-as.integer(otolith.data$Muestreados)
+    otolith.data$Otolitos<-as.integer(otolith.data$Otolitos)
+    otolith.data$Pendientes<-as.integer(otolith.data$Pendientes)
+    otolith.data
+    
+  })
+  
+  output$barras<-renderPlot({
+    
+    dat<-datos()
+    
+    dat["colores"]<-"green"
+    dat$colores[dat$otolitos<input$numotol]<-"red"
+    
+    barplot(dat$otolitos,names.arg=dat$ctalla,col=dat$colores,xlab='Clase de talla, cm',
+            ylab='Nº otolitos extraídos')
+    abline(h=input$numotol)
+    text(x=max(dat$ctalla),y=input$numotol+10,labels=paste('Objetivo: ',input$numotol,sep=''))
+    # plt
+  })
+  
+  output$report <- downloadHandler(
+    # For PDF output, change this to "report.pdf"
+    filename = "report.pdf",
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions to the current working dir (which
+      # can happen when deployed).
+      tempReport <- file.path(tempdir(), "report_template.Rmd")
+      file.copy("report_template.Rmd", tempReport, overwrite = TRUE)
+      
+      # Set up parameters to pass to Rmd document
+      dat<-datos()
+      params <- list(datos=dat,especie=input$especie,
+                     numotol=input$numotol,pendientes=input$pendientes)
+      
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
+  
+      })
+
+
+

@@ -1,0 +1,62 @@
+---
+title: "Control de muestreos biologicos"
+output: pdf_document
+params:
+  data: NA
+  lwr: NA
+  especie: NA
+---
+
+
+\begin{center}
+\textbf{Candidatos a outlier}\\
+\textbf{Especie:}`r params$especie`
+\end{center}
+
+```{r echo=FALSE}
+    data<-params$data
+    lwr.cooks<-cooks.distance(params$lwr)
+    colnames(data)<-c('Pesca','Número','Talla','Peso')
+    data["Cooks"]<-lwr.cooks
+    outliers.candidates<-order(lwr.cooks,decreasing=TRUE)[1:5]
+    outliers<-data[outliers.candidates,]
+    
+knitr::kable(outliers,format='pandoc',row.names=FALSE, align=c('c','c','c','c'))
+```
+
+\begin{center}
+\textbf{Gráfico Talla-Peso}
+\end{center}
+```{r echo=FALSE}
+  data<-params$data
+  lwr.cooks<-cooks.distance(params$lwr)
+  outliers.candidates<-order(lwr.cooks,decreasing=TRUE)[1:5]
+  outliers<-data[outliers.candidates,]
+  
+  plot(data$talla,data$peso,xlab='TL, mm',ylab='Peso, g')
+    
+    text(outliers$talla,outliers$peso,
+          labels=paste("P",outliers$lance,"-",outliers$numero),
+          col='red', cex=0.7,pos=3)
+```
+\begin{center}
+\textbf{Relación talla-peso}
+\end{center}
+
+
+```{r echo=FALSE}
+lwr<-params$lwr
+data<-params$data
+R2<-summary(lwr)["r.squared"]
+n<-nrow(data)
+rng<-range(data$talla)
+rango<-paste(rng[1],'-',rng[2],sep='')
+a<-round(exp(lwr$coefficients[1]),5)
+b<-round(lwr$coefficients[2],5)
+
+summary.lwr<-data.frame(n,rango,a,b,R2)
+colnames(summary.lwr)<-c('n','Rango','a','b','R^2^')
+
+knitr::kable(summary.lwr,row.names=FALSE,align=c('c','c','c','c'))
+plot(lwr)
+```

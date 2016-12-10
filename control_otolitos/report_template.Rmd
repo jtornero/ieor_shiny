@@ -1,0 +1,46 @@
+---
+title: "Control de otolitos"
+output: pdf_document
+params:
+  datos: NA
+  especie: NA
+  numotol: NA
+  pendientes: NA
+---
+
+**Especie:** `r params$especie`  
+
+**Objetivo otolitos:** `r params$numotol` por clase de talla (0.5 cm)
+
+\begin{center}
+\textbf{Distribución otolitos}
+\end{center}
+
+```{r echo=FALSE}
+    
+    dat<-params$datos
+    dat["colores"]<-"green"
+    dat$colores[dat$otolitos<params$numotol]<-"red"
+    
+    barplot(dat$otolitos,names.arg=dat$ctalla,col=dat$colores,xlab='Clase de talla, cm',
+            ylab='Nº otolitos extraídos')
+    abline(h=params$numotol)
+    text(x=max(dat$ctalla),y=params$numotol+10,labels=paste('Objetivo: ',params$numotol,sep=''))
+```
+
+
+\begin{center}
+\textbf{Recuento otolitos}
+\end{center}
+
+```{r echo=FALSE}
+
+datos<-params$datos
+
+if (params$pendientes==TRUE){
+    datos<-params$datos[params$datos$pendiente>0,]}
+
+knitr::kable(datos,format='pandoc',col.names=c('Clase Talla','Muestreados','Otolitos','Pendientes'),row.names=FALSE, align=c('c','c','c','c'),longtable=TRUE)
+```
+
+
