@@ -8,8 +8,8 @@ shinyServer(function(input, output,session) {
   
   output$lance<-renderUI({
     drv<-dbDriver("PostgreSQL")
-    con<-dbConnect(drv,dbname="<dbname>",host="<dbserver>",user="<dbuser>",
-                   password="<dbpassword>")
+    con<-dbConnect(drv,dbname="vbhwjxcm",host="hard-plum.db.elephantsql.com",user="vbhwjxcm",
+                   password="dNwTMDBQGUqF5lBbV7pxWccvLKrL7Z64")
     lances<-fetch(dbSendQuery(con,"select distinct lance from lances 
                             where camp='IEOR2016'
                             order by lance"),-1)
@@ -26,8 +26,8 @@ shinyServer(function(input, output,session) {
        c('Sin Datos')
      }else{
        drv<-dbDriver("PostgreSQL")
-       con<-dbConnect(drv,dbname="<dbname>",host="<dbserver>",user="<dbuser>",
-                      password="<dbpassword>")
+       con<-dbConnect(drv,dbname="vbhwjxcm",host="hard-plum.db.elephantsql.com",user="vbhwjxcm",
+                      password="dNwTMDBQGUqF5lBbV7pxWccvLKrL7Z64")
        
        lance.query<-paste("SELECT
           to_char(fecha,'DD-MM-YYYY') as fecha,

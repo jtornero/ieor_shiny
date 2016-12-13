@@ -7,7 +7,7 @@ shinyServer(function(input, output,session) {
   
   output$lance<-renderUI({
     drv<-dbDriver("PostgreSQL")
-    con<-dbConnect(drv,dbname="<dbname>",host="<dbserver>",user="<dbuser>",
+    con<-dbConnect(drv,dbname="<dbuser>",host="<dbserver>",user="<dbuser>",
                    password="<dbpassword>")
     lances<-fetch(dbSendQuery(con,"select distinct lance from lances 
                             where camp='IEOR2016'
@@ -23,7 +23,7 @@ shinyServer(function(input, output,session) {
       data.frame(c('Sin Datos'))
     }else{
     drv<-dbDriver("PostgreSQL")
-    con<-dbConnect(drv,dbname="<dbname>",host="<dbserver>",user="<dbuser>",
+    con<-dbConnect(drv,dbname="<dbuser>",host="<dbserver>",user="<dbuser>",
                    password="<dbpassword>")
     
     todas.query<-paste(
@@ -88,7 +88,7 @@ shinyServer(function(input, output,session) {
     data.frame(c('Sin Datos'))
   }else{
   drv<-dbDriver("PostgreSQL")
-  con<-dbConnect(drv,dbname="<dbname>",host="<dbserver>",user="<dbuser>",
+  con<-dbConnect(drv,dbname="<dbuser>",host="<dbserver>",user="<dbuser>",
                    password="<dbpassword>")
   
   selec.query<-paste(
@@ -142,7 +142,7 @@ shinyServer(function(input, output,session) {
        c('Sin Datos')
      }else{
        drv<-dbDriver("PostgreSQL")
-       con<-dbConnect(drv,dbname="<dbname>",host="<dbserver>",user="<dbuser>",
+       con<-dbConnect(drv,dbname="<dbuser>",host="<dbserver>",user="<dbuser>",
                       password="<dbpassword>")
        
        lance.query<-paste("SELECT

@@ -6,7 +6,7 @@ shinyServer(function(input, output,session) {
   
   output$spss<-renderUI({
     drv<-dbDriver("PostgreSQL")
-    con<-dbConnect(drv,dbname="<dbname>",host="<dbserver>",user="<dbuser>",
+    con<-dbConnect(drv,dbname="<dbuser>",host="<dbserver>",user="<dbuser>",
                    password="<dbpassword>")
     especies<-fetch(dbSendQuery(con,"select distinct ncien from especies where
                             espcod in (select espcod
@@ -19,7 +19,7 @@ shinyServer(function(input, output,session) {
   
   datos<-reactive({
     drv<-dbDriver("PostgreSQL")
-    con<-dbConnect(drv,dbname="<dbname>",host="<dbserver>",user="<dbuser>",
+    con<-dbConnect(drv,dbname="<dbuser>",host="<dbserver>",user="<dbuser>",
                    password="<dbpassword>")
     
     lfd.query<-paste("select lance,numero,talla,peso from biologicos,especies 
